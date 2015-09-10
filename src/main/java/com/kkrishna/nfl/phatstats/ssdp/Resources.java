@@ -30,4 +30,8 @@ public class Resources {
 	public String getPlayerNewsUrl(String playerName) {
 		return RssHelper.convertPlayerNewsUrlToJsonFeed(playerName);
 	}
+
+	public String getPlayerInfoUrl(String playerName) {
+		return "http://search.espn.go.com/" + playerName;
+	}
 }

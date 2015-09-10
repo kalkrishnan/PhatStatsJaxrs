@@ -11,4 +11,9 @@ public class RssHelper {
 		return "https://ajax.googleapis.com/ajax/services/search/news?v=1.0&rsz=8&q="
 				+ playerName + "%20NFL";
 	}
+
+	public static String convertPlayerInfoUrlToJsonFeed(String playerName) {
+		return "https://ajax.googleapis.com/ajax/services/search/news?v=1.0&rsz=8&q=http://search.espn.go.com/"
+				+ playerName;
+	}
 }

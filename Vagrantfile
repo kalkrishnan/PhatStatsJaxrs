@@ -24,14 +24,25 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
    #config.vm.box_url = "https://dl.dropboxusercontent.com/s/uba887a4jas6qqz/ubuntu1110x64.box"
-   config.vm.network :forwarded_port, guest: 8080, host: 8080
+   config.vm.network :forwarded_port, guest: 8080, host: 8081
+     
+	config.vm.provision :shell do |shell|
+		begin 
+    		shell.inline = "echo removing docker containers**;
+    				docker stop $(docker ps -a -q);
+					docker rm $(docker ps -a -q);
+					echo done removing docker containers**"
+		rescue
+			puts "docker not yet installed"
+		end
+  	end
    config.vm.provision "shell", inline:
-     "ls -LR"
+     "ls -LR;sudo iptables -F"
   config.vm.provision "docker" do |d|
 	 d.build_image "/home/vagrant/PhatStats", args: "-t 'phatstats'"
-	 d.run "phatstats", args: " -p '8888:8080'"
+	 d.run "phatstats", args: " -p '8080:8080'"
   end
-	#config.vm.provision "shell", inline:
+
     # "ps aux | grep 'sshd:' | awk '{print $2}' | xargs kill"
   # Disable synced folders (prevents an NFS error on "vagrant up")
   #config.vm.synced_folder ".", "/vagrant", disabled: true
