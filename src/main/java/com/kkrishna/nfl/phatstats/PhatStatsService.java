@@ -1,6 +1,10 @@
 package com.kkrishna.nfl.phatstats;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 import javax.ws.rs.Encoded;
 import javax.ws.rs.GET;
@@ -11,10 +15,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.client.ClientProtocolException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.kkrishna.nfl.phatstats.news.NewsFactory;
 import com.kkrishna.nfl.phatstats.ssdp.PhatHttpClient;
 import com.kkrishna.nfl.phatstats.ssdp.Resources;
@@ -95,7 +106,7 @@ public class PhatStatsService {
 		return Response.status(200).entity(output).header("Access-Control-Allow-Origin", "*").build();
 
 	}
-	
+
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("/PlayerInfo")
@@ -104,13 +115,66 @@ public class PhatStatsService {
 			throws ClientProtocolException, IOException {
 
 		Gson gson = new GsonBuilder().create();
-		String output = gson
-				.toJson(newsFactory.getPlayerInfo(resources.getPlayerInfoUrl(playerName)));
+		String output = gson.toJson(newsFactory.getPlayerInfo(resources.getPlayerInfoUrl(playerName)));
 		System.out.println(output);
 		System.out.println("Before returning count3");
 
 		return Response.status(200).entity(output).header("Access-Control-Allow-Origin", "*").build();
 
+	}
+
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("/teamPassingSchedule")
+	@Encoded
+	public Response getTeamPassingSchedule(@QueryParam("team") String team)
+			throws ClientProtocolException, IOException {
+
+		Map<String, Integer> schedule = new HashMap<String, Integer>();
+		Gson gson = new GsonBuilder().create();
+		String entireSchedule = client.getResponse(resources.getTeamScheduleUrl(team));
+		JsonElement jelement = new JsonParser().parse(entireSchedule);
+
+		JsonObject jobject = jelement.getAsJsonObject();
+		JsonArray jSchedule = jobject.getAsJsonArray("Schedule");
+		for (JsonElement jsonElement : jSchedule) {
+			jobject = jsonElement.getAsJsonObject();
+			System.out.println(jsonElement.toString());
+			String homeTeam = jobject.get("homeTeam").toString().replace("\"", "");
+			String awayTeam = jobject.get("awayTeam").toString().replace("\"", "");
+
+			String scheduleTeam = (homeTeam.equalsIgnoreCase(team)) ? awayTeam
+					: ((awayTeam.equalsIgnoreCase(team) ? homeTeam : null));
+			if (null != scheduleTeam) {
+				System.out.println(scheduleTeam);
+				int rank = Integer.parseInt(getTeamDefensePassingRank(scheduleTeam));
+				schedule.put(scheduleTeam, rank);
+			}
+
+		}
+		return Response.status(200).entity(gson.toJson(schedule)).header("Access-Control-Allow-Origin", "*").build();
+
+	}
+
+	private String getTeamDefensePassingRank(String team) throws ClientProtocolException, IOException {
+
+		try {
+			HashMap<String, String> passingRanks = new LinkedHashMap<String, String>();
+			Document doc = Jsoup.connect(resources.getDefensePassingRankings()).get();
+			Elements playerInfoTable = doc.select("div#my-teams-table div div table");
+			Elements teams = playerInfoTable.get(0).select("tr");
+			IntStream.range(0, teams.size()).parallel().forEach(i -> {
+				passingRanks.put(teams.get(i).select("a").text().trim(), teams.get(i).select("td").get(0).text());
+			});
+			System.out.println(passingRanks.toString());
+			System.out.println(Resources.normalizeTeamName(team));
+			return passingRanks.get(Resources.normalizeTeamName(team));
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
