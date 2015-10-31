@@ -130,8 +130,29 @@ public class PhatStatsService {
 	public Response getTeamPassingSchedule(@QueryParam("team") String team)
 			throws ClientProtocolException, IOException {
 
-		Map<String, Integer> schedule = new HashMap<String, Integer>();
 		Gson gson = new GsonBuilder().create();
+		return Response.status(200).entity(gson.toJson(getTeamDefenseSchedule(team, "Passing")))
+				.header("Access-Control-Allow-Origin", "*").build();
+
+	}
+
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("/teamRushingSchedule")
+	@Encoded
+	public Response getTeamRushingSchedule(@QueryParam("team") String team)
+			throws ClientProtocolException, IOException {
+
+		Gson gson = new GsonBuilder().create();
+		return Response.status(200).entity(gson.toJson(getTeamDefenseSchedule(team, "Rushing")))
+				.header("Access-Control-Allow-Origin", "*").build();
+
+	}
+
+	private Map<String, Integer> getTeamDefenseSchedule(String team, String type)
+			throws ClientProtocolException, IOException {
+
+		Map<String, Integer> schedule = new HashMap<String, Integer>();
 		String entireSchedule = client.getResponse(resources.getTeamScheduleUrl(team));
 		JsonElement jelement = new JsonParser().parse(entireSchedule);
 
@@ -146,35 +167,33 @@ public class PhatStatsService {
 			String scheduleTeam = (homeTeam.equalsIgnoreCase(team)) ? awayTeam
 					: ((awayTeam.equalsIgnoreCase(team) ? homeTeam : null));
 			if (null != scheduleTeam) {
-				System.out.println(scheduleTeam);
-				int rank = Integer.parseInt(getTeamDefensePassingRank(scheduleTeam));
+				int rank = Integer.parseInt(getTeamDefenseRank(scheduleTeam, type));
 				schedule.put(scheduleTeam, rank);
 			}
 
 		}
-		return Response.status(200).entity(gson.toJson(schedule)).header("Access-Control-Allow-Origin", "*").build();
+		return schedule;
 
 	}
 
-	private String getTeamDefensePassingRank(String team) throws ClientProtocolException, IOException {
-
+	private String getTeamDefenseRank(String scheduleTeam, String type) {
 		try {
-			HashMap<String, String> passingRanks = new LinkedHashMap<String, String>();
-			Document doc = Jsoup.connect(resources.getDefensePassingRankings()).get();
+			HashMap<String, String> defenseRanks = new LinkedHashMap<String, String>();
+			Document doc = type.equals("Passing") ? Jsoup.connect(resources.getDefenseRushingRankings()).get()
+					: Jsoup.connect(resources.getDefensePassingRankings()).get();
 			Elements playerInfoTable = doc.select("div#my-teams-table div div table");
 			Elements teams = playerInfoTable.get(0).select("tr");
 			IntStream.range(0, teams.size()).parallel().forEach(i -> {
-				passingRanks.put(teams.get(i).select("a").text().trim(), teams.get(i).select("td").get(0).text());
+				defenseRanks.put(teams.get(i).select("a").text().trim(), teams.get(i).select("td").get(0).text());
 			});
-			System.out.println(passingRanks.toString());
-			System.out.println(Resources.normalizeTeamName(team));
-			return passingRanks.get(Resources.normalizeTeamName(team));
+			return defenseRanks.get(Resources.normalizeTeamName(scheduleTeam));
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
+
 	}
 
 }
