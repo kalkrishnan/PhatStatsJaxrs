@@ -11,9 +11,10 @@ public class Resources {
 	private final String NEWS_URL;
 	private final String DEFENSE_RUSHING_RANKINGS;
 	private final String DEFENSE_PASSING_RANKINGS;
+	private final String OFFENSE_RANKINGS;
 
 	public Resources(String playerListUrl, String teamListUrl, String newsUrl, String teamScheduleUrl,
-			String defenseRushingRanks, String defensePassingRanks) {
+			String defenseRushingRanks, String defensePassingRanks, String offenseRanks) {
 
 		this.PLAYER_LIST_URL = playerListUrl;
 		this.TEAM_LIST_URL = teamListUrl;
@@ -21,6 +22,7 @@ public class Resources {
 		this.TEAM_SCHEDULE_URL = teamScheduleUrl;
 		this.DEFENSE_PASSING_RANKINGS = defensePassingRanks;
 		this.DEFENSE_RUSHING_RANKINGS = defenseRushingRanks;
+		this.OFFENSE_RANKINGS = offenseRanks;
 	}
 
 	public String getPlayerUrl() {
@@ -53,6 +55,10 @@ public class Resources {
 
 	public String getDefensePassingRankings() {
 		return this.DEFENSE_PASSING_RANKINGS;
+	}
+
+	public String getOffenseRankings() {
+		return this.OFFENSE_RANKINGS;
 	}
 
 	public static String normalizeTeamName(String team) {

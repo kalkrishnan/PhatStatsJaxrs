@@ -26,6 +26,7 @@
 		<constructor-arg value="${nfl_schedule_url}" />
 		<constructor-arg value="${nfl_defense_rushing_rankings}" />
 		<constructor-arg value="${nfl_defense_passing_rankings}" />
+		<constructor-arg value="${nfl_offense_passing_rankings}" />
 	</bean>
 
 	<bean id="httpCLient" class="com.kkrishna.nfl.phatstats.ssdp.PhatHttpClient"
